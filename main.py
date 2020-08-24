@@ -1,24 +1,12 @@
 import input
 import random
 import itertools
-def toKB(maze, KB, ih, iw, state):
-    sentence = []
-    for i in [-1, 0, 1]:
-        for j in [-1, 0, 1]:
-            # Not diag of maze
-            if i != j and i + j != 0:
-                ii = i + ih
-                jj = j + iw
-                if validCell(ii, jj, len(maze)):
-                    sentence.append(state + str(ii) + str(jj))
-    KB.append(sentence)
-    return KB
 def getAllAdj(maze, ih, iw):
     res = []
     for i in [-1, 0, 1]:
         for j in [-1, 0, 1]:
             # Not diag of maze
-            if i != j:
+            if i != j and i + j != 0:
                 ii = i + ih
                 jj = j + iw
                 if validCell(ii, jj, len(maze)):
@@ -43,6 +31,7 @@ def Resolution(KB, alpha):
                 resolvents = Resolve(pair_clauses)
                 if len(resolvents) == 0:
                     return True
+                resolvents = sorted(resolvents, key=lambda x:x[-1])
                 if not(isComplementaryClause(resolvents)) and(resolvents not in clauses) and(resolvents not in new):
                     new.append(resolvents)
 
@@ -68,7 +57,7 @@ def Resolve(pair_clauses):
                 break
 
 
-    return list(clauses_1 + clauses_2), complementary_once
+    return list(clauses_1 + clauses_2)
 
 def isComplementaryClause(resolvents):
     for i in range(len(resolvents)):
@@ -115,28 +104,47 @@ if __name__ == '__main__':
     j_agent = 0
     KB = []
     score = 0
+    gold_collect = 0
     while True:
         cur_states = maze[i_agent][j_agent]
         if cur_states == 'P' or cur_states == 'W':
             print("LOSE")
             break
         else:
+            allAdj = getAllAdj(maze, i_agent, j_agent)
             KB.append(['-P' + str(i_agent) + str(j_agent)])
             KB.append(['-W' + str(i_agent) + str(j_agent)])
             state = [s for s in cur_states]
-            for i in range(len(state)):
-                if state[i] == 'B':
-                    KB = toKB(maze, KB, i_agent, j_agent, 'P')
-                elif state[i] == 'S':
-                    KB = toKB(maze, KB, i_agent, j_agent, 'W')
-                elif state[i] == 'G':
+            for j in range(len(state)):
+                clause = []
+                if state[j] == 'B':
+                    for i in range(len(allAdj)):
+                        clause.append('P' + str(allAdj[i][0]) + str(allAdj[i][1]))
+                    KB.append(clause)
+
+                elif state[j] == 'S':
+                    for i in range(len(allAdj)):
+                        clause.append('W' + str(allAdj[i][0]) + str(allAdj[i][1]))
+                    KB.append(clause)
+
+                elif state[j] == 'G':
                     score += 100
-            allAdj = getAllAdj(maze, i_agent, j_agent)
+
+                elif state[j] == '-':
+                    for i in range(len(allAdj)):
+                    # KB = toKB(maze, KB, i_agent, j_agent, '-P')
+                        KB.append(['-P' + str(allAdj[i][0]) + str(allAdj[i][1])])
+                        KB.append(['-W' + str(allAdj[i][0]) + str(allAdj[i][1])])
+
+
+            possible_move = []
             for i in range(len(allAdj)):
                 # KB ^ -alpha
-                check = Resolution(KB, '-P' + str(allAdj[i][0]) + str(allAdj[i][1]))
-
-
+                checkP = Resolution(KB, '-P' + str(allAdj[i][0]) + str(allAdj[i][1]))
+                #checkW = Resolution(KB, '-W' + str(allAdj[i][0]) + str(allAdj[i][1]))
+                #if ((checkP == True) or (checkW == True)):
+                #   possible_move.append([allAdj[i][0],allAdj[i][1]])
+            #print(possible_move)
 
 
 
