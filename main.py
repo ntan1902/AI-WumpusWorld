@@ -30,16 +30,66 @@ def validCell(i, j, shape):
 
 def Resolution(KB, alpha):
     clauses = KB.copy()
-    not_alpha = alpha.replace('~', '')
+    if '-' in alpha:
+        not_alpha = [alpha.replace('-', '')]
+    else:
+        not_alpha = ['-' + alpha]
     clauses.append(not_alpha)
     new = []
     while True:
         # Tổ hợp chập 2
         for pair_clauses in itertools.combinations(clauses, 2):
-            resolvents = Resolve(pair_clauses)
+            resolvents, complementary_once = Resolve(pair_clauses)
+
+            if len(resolvents) == 0:
+                return True
+
+            if complementary_once and not(isComplementaryClause(resolvents)):
+                new.append(resolvents)
+
+        if checkSubset(new, clauses):
+            return False
+
+        clauses = clauses + new
+        new.clear()
 
 def Resolve(pair_clauses):
-    pass
+    clauses_1 = pair_clauses[0].copy()
+    clauses_2 = pair_clauses[1].copy()
+    complementary_once = False
+    for cl1 in pair_clauses[0]:
+        for cl2 in pair_clauses[1]:
+            if ((cl1 == ('-' + cl2)) or ('-' + cl1 == cl2)) and not(complementary_once):
+                clauses_1.remove(cl1)
+                clauses_2.remove(cl2)
+                complementary_once = True
+
+            if (cl1 == cl2):
+                clauses_1.remove(cl1)
+                break
+
+
+    return list(clauses_1 + clauses_2), complementary_once
+
+def isComplementaryClause(resolvents):
+    for i in range(len(resolvents)):
+        for j in range(len(resolvents)):
+            if (resolvents[i] == ('-' + resolvents[j])) or ('-' + resolvents[i] == resolvents[j]):
+                return True
+    return False
+
+def checkSubset(a, b):
+    count = 0
+    for a_ in a:
+        for b_ in b:
+            if a_ == b_:
+                count += 1
+                break
+
+    if count == len(a):
+        return True
+    else:
+        return False
 
 if __name__ == '__main__':
     # maze = input.inputFile("map1.txt", "r")
@@ -67,8 +117,8 @@ if __name__ == '__main__':
             print("LOSE")
             break
         else:
-            KB.append(['~P' + str(i_agent) + str(j_agent)])
-            KB.append(['~W' + str(i_agent) + str(j_agent)])
+            KB.append(['-P' + str(i_agent) + str(j_agent)])
+            KB.append(['-W' + str(i_agent) + str(j_agent)])
             state = [s for s in cur_states]
             for i in range(len(state)):
                 if state[i] == 'B':
@@ -79,9 +129,9 @@ if __name__ == '__main__':
                     score += 100
             allAdj = getAllAdj(maze, i_agent, j_agent)
             for i in range(len(allAdj)):
-                # KB ^ ~alpha
-                check = Resolution(KB, '~P' + str(allAdj[i][0]) + str(allAdj[i][1]))
-                
+                # KB ^ -alpha
+                check = Resolution(KB, '-P' + str(allAdj[i][0]) + str(allAdj[i][1]))
+
 
 
 
