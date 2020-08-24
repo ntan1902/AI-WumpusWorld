@@ -79,6 +79,13 @@ def checkSubset(a, b):
     else:
         return False
 
+def not_in(a, b):
+    for i in range (len(b)):
+        if(a == b[i]):
+            return False
+    return True
+
+
 if __name__ == '__main__':
     # maze = input.inputFile("map1.txt", "r")
     maze = input.inputFile("maptab.txt", "r")
@@ -105,6 +112,8 @@ if __name__ == '__main__':
     KB = []
     score = 0
     gold_collect = 0
+    visited = []
+
     while True:
         cur_states = maze[i_agent][j_agent]
         if cur_states == 'P' or cur_states == 'W':
@@ -120,15 +129,25 @@ if __name__ == '__main__':
                 if state[j] == 'B':
                     for i in range(len(allAdj)):
                         clause.append('P' + str(allAdj[i][0]) + str(allAdj[i][1]))
+
+                        if len(state) == 1:
+                            KB.append(['-W' + str(allAdj[i][0]) + str(allAdj[i][1])])
+
                     KB.append(clause)
 
                 elif state[j] == 'S':
                     for i in range(len(allAdj)):
                         clause.append('W' + str(allAdj[i][0]) + str(allAdj[i][1]))
+                        if len(state) == 1:
+                            KB.append(['-P' + str(allAdj[i][0]) + str(allAdj[i][1])])
                     KB.append(clause)
 
                 elif state[j] == 'G':
                     score += 100
+                    gold_collect+= 1
+                    if(gold_collect == countG):
+                        print("WIN")
+                        break
 
                 elif state[j] == '-':
                     for i in range(len(allAdj)):
@@ -137,14 +156,27 @@ if __name__ == '__main__':
                         KB.append(['-W' + str(allAdj[i][0]) + str(allAdj[i][1])])
 
 
+            visited.append([i_agent, j_agent])
             possible_move = []
+            count_move = 0
             for i in range(len(allAdj)):
                 # KB ^ -alpha
                 checkP = Resolution(KB, '-P' + str(allAdj[i][0]) + str(allAdj[i][1]))
-                #checkW = Resolution(KB, '-W' + str(allAdj[i][0]) + str(allAdj[i][1]))
-                #if ((checkP == True) or (checkW == True)):
-                #   possible_move.append([allAdj[i][0],allAdj[i][1]])
-            #print(possible_move)
+                checkW = Resolution(KB, '-W' + str(allAdj[i][0]) + str(allAdj[i][1]))
 
+                if ((checkP == True) and (checkW == True)):
+                    possible_move.append([allAdj[i][0],allAdj[i][1]])
+                    count_move += 1
 
-
+            if(count_move > 1):
+                for i in range(count_move):
+                    new_i_j = possible_move[i]
+                    if (not_in(new_i_j, visited) == True):
+                        i_agent = new_i_j[0]
+                        j_agent = new_i_j[1]
+                        break
+                    else:
+                            count_move -= 1
+            else:
+                i_agent = visited[0][0]
+                j_agent = visited[0][1]
