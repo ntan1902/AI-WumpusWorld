@@ -39,15 +39,14 @@ def Resolution(KB, alpha):
     while True:
         # Tổ hợp chập 2
         for pair_clauses in itertools.combinations(clauses, 2):
-            resolvents, complementary_once = Resolve(pair_clauses)
+            if isComplementaryClause(list(pair_clauses[0] + pair_clauses[1])):
+                resolvents = Resolve(pair_clauses)
+                if len(resolvents) == 0:
+                    return True
+                if not(isComplementaryClause(resolvents)) and(resolvents not in clauses) and(resolvents not in new):
+                    new.append(resolvents)
 
-            if len(resolvents) == 0:
-                return True
-
-            if complementary_once and not(isComplementaryClause(resolvents)):
-                new.append(resolvents)
-
-        if checkSubset(new, clauses):
+        if len(new) == 0:
             return False
 
         clauses = clauses + new
@@ -94,9 +93,8 @@ def checkSubset(a, b):
 if __name__ == '__main__':
     # maze = input.inputFile("map1.txt", "r")
     maze = input.inputFile("maptab.txt", "r")
-    # Count the number of gold
-    # Count the number of wumpus
 
+    # Count the number of gold and wumpus
     # TODO
     countG = 0
     countW = 0
@@ -106,8 +104,7 @@ if __name__ == '__main__':
                 countG += 1
             if ("W" in maze[i][j]):
                 countW += 1
-    print(countG)
-    print(countW)
+
     # while True:
     #     x_agent, y_agent = random.randint(0, len(maze) - 1), random.randint(0, len(maze) - 1)
     #     if maze[x_agent][y_agent] != 'P' and maze[x_agent][y_agent] != 'W':
