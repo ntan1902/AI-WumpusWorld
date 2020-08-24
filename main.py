@@ -44,13 +44,20 @@ def Resolve(pair_clauses):
 if __name__ == '__main__':
     # maze = input.inputFile("map1.txt", "r")
     maze = input.inputFile("maptab.txt", "r")
-
     # Count the number of gold
-    # TODO
-
     # Count the number of wumpus
-    # TODO
 
+    # TODO
+    countG = 0
+    countW = 0
+    for i in range(len(maze)):
+        for j in range(len(maze)):
+            if ("G" in maze[i][j]):
+                countG += 1
+            if ("W" in maze[i][j]):
+                countW += 1
+    print(countG)
+    print(countW)
     # while True:
     #     x_agent, y_agent = random.randint(0, len(maze) - 1), random.randint(0, len(maze) - 1)
     #     if maze[x_agent][y_agent] != 'P' and maze[x_agent][y_agent] != 'W':
