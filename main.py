@@ -6,7 +6,7 @@ def toKB(maze, KB, ih, iw, state):
     for i in [-1, 0, 1]:
         for j in [-1, 0, 1]:
             # Not diag of maze
-            if i != j:
+            if i != j and i + j != 0:
                 ii = i + ih
                 jj = j + iw
                 if validCell(ii, jj, len(maze)):
