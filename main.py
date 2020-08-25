@@ -178,5 +178,5 @@ if __name__ == '__main__':
                     else:
                             count_move -= 1
             else:
-                i_agent = visited[0][0]
-                j_agent = visited[0][1]
+                i_agent = visited[-2][0]
+                j_agent = visited[-2][1]
