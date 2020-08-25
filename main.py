@@ -85,6 +85,21 @@ def not_in(a, b):
             return False
     return True
 
+def createClause(query, allAdj):
+    clause = []
+    for i in range(len(allAdj)):
+        position_xy = str(allAdj[i][0]) + str(allAdj[i][1])
+
+        clause.append(query + position_xy)
+    return clause
+
+def addClauseToKB(KB, query, allAdj):
+    for i in range(len(allAdj)):
+        position_xy = str(allAdj[i][0]) + str(allAdj[i][1])
+
+        if [query + position_xy] not in KB:
+            KB.append([query + position_xy])
+    return KB
 
 if __name__ == '__main__':
     # maze = input.inputFile("map1.txt", "r")
@@ -116,6 +131,7 @@ if __name__ == '__main__':
 
     while True:
         cur_states = maze[i_agent][j_agent]
+        visited.append([i_agent, j_agent])
         if cur_states == 'P' or cur_states == 'W':
             print("LOSE")
             break
@@ -125,38 +141,42 @@ if __name__ == '__main__':
             KB.append(['-W' + str(i_agent) + str(j_agent)])
             state = [s for s in cur_states]
             for j in range(len(state)):
-                clause = []
+
+                # Breeze
                 if state[j] == 'B':
-                    for i in range(len(allAdj)):
-                        clause.append('P' + str(allAdj[i][0]) + str(allAdj[i][1]))
+                    clause = createClause('P', allAdj)
+                    if clause not in KB:
+                        KB.append(clause)
 
-                        if len(state) == 1:
-                            KB.append(['-W' + str(allAdj[i][0]) + str(allAdj[i][1])])
+                    if len(state) == 1:
+                        KB = addClauseToKB(KB, '-W', allAdj)
 
-                    KB.append(clause)
 
+                # Stench
                 elif state[j] == 'S':
-                    for i in range(len(allAdj)):
-                        clause.append('W' + str(allAdj[i][0]) + str(allAdj[i][1]))
-                        if len(state) == 1:
-                            KB.append(['-P' + str(allAdj[i][0]) + str(allAdj[i][1])])
-                    KB.append(clause)
+                    clause = createClause('W', allAdj)
+                    if clause not in KB:
+                        KB.append(clause)
 
+                    if len(state) == 1:
+                        KB = addClauseToKB(KB, '-P', allAdj)
+
+                # Gold
                 elif state[j] == 'G':
                     score += 100
                     gold_collect+= 1
                     if(gold_collect == countG):
                         print("WIN")
+                        print(visited)
                         break
 
+                # Empty
                 elif state[j] == '-':
-                    for i in range(len(allAdj)):
-                    # KB = toKB(maze, KB, i_agent, j_agent, '-P')
-                        KB.append(['-P' + str(allAdj[i][0]) + str(allAdj[i][1])])
-                        KB.append(['-W' + str(allAdj[i][0]) + str(allAdj[i][1])])
+                    KB = addClauseToKB(KB, '-P', allAdj)
+                    KB = addClauseToKB(KB, '-W', allAdj)
 
 
-            visited.append([i_agent, j_agent])
+
             possible_move = []
             count_move = 0
             for i in range(len(allAdj)):
@@ -168,15 +188,11 @@ if __name__ == '__main__':
                     possible_move.append([allAdj[i][0],allAdj[i][1]])
                     count_move += 1
 
-            if(count_move > 1):
-                for i in range(count_move):
-                    new_i_j = possible_move[i]
-                    if (not_in(new_i_j, visited) == True):
-                        i_agent = new_i_j[0]
-                        j_agent = new_i_j[1]
+            if(len(possible_move) > 1):
+                for i in range(len(possible_move)):
+                    if (not_in(possible_move[i], visited) == True):
+                        i_agent, j_agent = possible_move[i]
                         break
-                    else:
-                            count_move -= 1
+
             else:
-                i_agent = visited[-2][0]
-                j_agent = visited[-2][1]
+                i_agent, j_agent = possible_move[0]
