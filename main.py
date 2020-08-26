@@ -101,12 +101,60 @@ def addClauseToKB(KB, query, allAdj):
             KB.append([query + position_xy])
     return KB
 
+def findPossibleMove(KB, allAdj, visited):
+    possible_move = []
+    previous_move = []
+    for i in range(len(allAdj)):
+        position_xy = str(allAdj[i][0]) + str(allAdj[i][1])
+        # KB ^ -alpha
+        checkP = Resolution(KB, '-P' + position_xy)
+        checkW = Resolution(KB, '-W' + position_xy)
+
+        if ((checkP == True) and (checkW == True)):
+            possible_move.append([allAdj[i][0], allAdj[i][1]])
+
+    for possible in possible_move.copy():
+        if possible in visited:
+            previous_move.append(possible)
+            possible_move.remove(possible)
+
+    return possible_move, previous_move
+
+def findImpossibleMove(KB, allAdj):
+    impossible_move = []
+    for i in range(len(allAdj)):
+        position_xy = str(allAdj[i][0]) + str(allAdj[i][1])
+        # KB ^ -alpha
+        checkP = Resolution(KB, 'P' + position_xy)
+        checkW = Resolution(KB, 'W' + position_xy)
+
+        if checkP == True:
+            if ['P' + position_xy] not in KB:
+                KB.append(['P' + position_xy])
+                KB.append(['-W' + position_xy])
+
+
+        if checkW == True:
+            if ['W' + position_xy] not in KB:
+                KB.append(['W' + position_xy])
+                KB.append(['-P' + position_xy])
+
+
+        if ((checkP == True) or (checkW == True)):
+            impossible_move.append([allAdj[i][0], allAdj[i][1]])
+
+    return impossible_move, KB
+
+def findRandomMove(KB, allAdj, impossible_move, previous_move):
+    while True:
+        i = random.randint(0, len(allAdj) - 1)
+        if (allAdj[i] not in impossible_move) and (allAdj[i] not in previous_move):
+            return allAdj[i]
+
 if __name__ == '__main__':
     # maze = input.inputFile("map1.txt", "r")
-    maze = input.inputFile("maptab.txt", "r")
-
+    maze = input.inputFile("maptab4.txt", "r")
     # Count the number of gold and wumpus
-    # TODO
     countG = 0
     countW = 0
     for i in range(len(maze)):
@@ -115,25 +163,35 @@ if __name__ == '__main__':
                 countG += 1
             if ("W" in maze[i][j]):
                 countW += 1
-
-    # while True:
-    #     x_agent, y_agent = random.randint(0, len(maze) - 1), random.randint(0, len(maze) - 1)
-    #     if maze[x_agent][y_agent] != 'P' and maze[x_agent][y_agent] != 'W':
-    #         break
-    # print(f"Start position for Agent: {x_agent + 1, y_agent + 1}")
-    # print(f"Room: {maze[x_agent][y_agent]}")
     i_agent = 0
     j_agent = 0
+    # while True:
+    #     i_agent, j_agent = random.randint(0, len(maze) - 1), random.randint(0, len(maze) - 1)
+    #     if maze[i_agent][j_agent] != 'P' and maze[i_agent][j_agent] != 'W':
+    #         break
+    print(f"Start position for Agent: {i_agent + 1, j_agent + 1}")
+    print(f"Room: {maze[i_agent][j_agent]}")
+
     KB = []
     score = 0
     gold_collect = 0
     visited = []
+    path = []
+    count_possible_move = 0
 
     while True:
         cur_states = maze[i_agent][j_agent]
         visited.append([i_agent, j_agent])
+
+        if [i_agent, j_agent] in path:
+            path.pop(-1)
+        else:
+            path.append([i_agent, j_agent])
+
         if cur_states == 'P' or cur_states == 'W':
+            score -= 10000
             print("LOSE")
+            print(f"Score: {score}")
             break
         else:
             allAdj = getAllAdj(maze, i_agent, j_agent)
@@ -148,7 +206,7 @@ if __name__ == '__main__':
                     if clause not in KB:
                         KB.append(clause)
 
-                    if len(state) == 1:
+                    if 'S' not in state:
                         KB = addClauseToKB(KB, '-W', allAdj)
 
 
@@ -158,16 +216,17 @@ if __name__ == '__main__':
                     if clause not in KB:
                         KB.append(clause)
 
-                    if len(state) == 1:
+                    if 'B' not in state:
                         KB = addClauseToKB(KB, '-P', allAdj)
 
                 # Gold
                 elif state[j] == 'G':
                     score += 100
-                    gold_collect+= 1
+                    gold_collect += 1
                     if(gold_collect == countG):
                         print("WIN")
                         print(visited)
+                        print(path)
                         break
 
                 # Empty
@@ -175,24 +234,36 @@ if __name__ == '__main__':
                     KB = addClauseToKB(KB, '-P', allAdj)
                     KB = addClauseToKB(KB, '-W', allAdj)
 
+            # Find possible move
+            possible_move, previous_move = findPossibleMove(KB, allAdj, visited)
+            count_possible_move += len(possible_move)
 
 
-            possible_move = []
-            count_move = 0
-            for i in range(len(allAdj)):
-                # KB ^ -alpha
-                checkP = Resolution(KB, '-P' + str(allAdj[i][0]) + str(allAdj[i][1]))
-                checkW = Resolution(KB, '-W' + str(allAdj[i][0]) + str(allAdj[i][1]))
-
-                if ((checkP == True) and (checkW == True)):
-                    possible_move.append([allAdj[i][0],allAdj[i][1]])
-                    count_move += 1
-
-            if(len(possible_move) > 1):
+            if len(possible_move) > 0:
                 for i in range(len(possible_move)):
                     if (not_in(possible_move[i], visited) == True):
                         i_agent, j_agent = possible_move[i]
+                        count_possible_move -= 1
+                        score -= 10
                         break
 
             else:
-                i_agent, j_agent = possible_move[0]
+                # Random move or go back
+
+                # Find impossible move, update KB
+                impossible_move, KB = findImpossibleMove(KB, allAdj)
+
+                # Go back
+                if count_possible_move > 0:
+                    i_agent, j_agent = previous_move[0]
+                    score -= 10
+                    count_possible_move -= 1
+
+                # Random move
+                else:
+                    i_agent, j_agent = findRandomMove(KB, allAdj, impossible_move, previous_move)
+                    score -= 10
+
+
+
+
