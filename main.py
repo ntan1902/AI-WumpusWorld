@@ -116,7 +116,6 @@ def findPossibleMove(KB, allAdj):
     return possible_move
 
 def findImpossibleMove(KB, allAdj):
-    impossible_move = []
     for i in range(len(allAdj)):
         position_xy = str(allAdj[i][0]) + str(allAdj[i][1])
         # KB ^ -alpha
@@ -136,12 +135,7 @@ def findImpossibleMove(KB, allAdj):
                 KB.append(['W' + position_xy])
                 KB.append(['-P' + position_xy])
 
-
-
-        if ((checkP == True) or (checkW == True)):
-            impossible_move.append([allAdj[i][0], allAdj[i][1]])
-
-    return impossible_move, KB
+    return KB
 
 def findRandomMove(KB, allAdj, impossible_move):
     while True:
@@ -185,7 +179,7 @@ def updateKB(KB, cur_states, allAdj):
 
 if __name__ == '__main__':
     # maze = input.inputFile("map1.txt", "r")
-    maze = input.inputFile("maptab4.txt", "r")
+    maze = input.inputFile("maptab10.txt", "r")
     # Count the number of gold and wumpus
     countG = 0
     countW = 0
@@ -209,7 +203,7 @@ if __name__ == '__main__':
     gold_collect = 0
     visited = []
     path = []
-    count_possible_move = 0
+    possible_move = []
     previous_move = []
     isFirstMove = True
 
@@ -225,7 +219,6 @@ if __name__ == '__main__':
         if cur_states == 'P' or cur_states == 'W':
             score -= 10000
             print("LOSE")
-            print(f"Score: {score}")
             break
 
         else:
@@ -242,52 +235,56 @@ if __name__ == '__main__':
 
 
             # Find possible move
-            possible_move = findPossibleMove(KB, allAdj)
+            possible = findPossibleMove(KB, allAdj)
+            newMove = False
+            for i in range(len(possible)):
+                if possible[i] not in visited:
+                    if possible[i] in possible_move:
+                        possible_move.remove(possible[i])
+                    possible_move.append(possible[i])
+                    newMove = True
 
-            for possible in possible_move.copy():
-                if possible in visited:
-                    possible_move.remove(possible)
+            # for possible in possible_move.copy():
+            #     if possible in visited:
+            #         possible_move.remove(possible)
 
-            count_possible_move += len(possible_move)
 
 
             if len(possible_move) > 0:
-                for i in range(len(possible_move)):
+                isFirstMove = False
+                if newMove:
                     previous_move.append(list((i_agent, j_agent)))
-                    i_agent, j_agent = possible_move[i]
-                    count_possible_move -= 1
-                    break
-
-            else:
-                # Climb out of cave or go back
-
-                # Find impossible move, update KB
-                impossible_move, KB = findImpossibleMove(KB, allAdj)
-
-                # Go back
-                if count_possible_move > 0:
+                    i_agent, j_agent = possible_move[-1]
+                    possible_move.pop(-1)
+                else:
+                    # Find impossible move, update KB
+                    KB = findImpossibleMove(KB, allAdj)
+                    # Go back
                     i_agent, j_agent = previous_move[-1]
                     previous_move.pop(-1)
-                    count_possible_move -= 1
 
+
+
+            else:
+
+                # Random for first move
+                if isFirstMove:
+                    i = random.randint(0, len(allAdj) - 1)
+                    i_agent, j_agent = allAdj[i]
+                    isFirstMove = False
                 # Climb out of cave
                 else:
-                    if isFirstMove:
-                        i = random.randint(0, len(allAdj) - 1)
-                        i_agent, j_agent = allAdj[i]
-                        isFirstMove = False
-                    else:
-                        res = path.copy()
+                    res = path.copy()
 
-                        res.pop(-1)
-                        res.reverse()
+                    res.pop(-1)
+                    res.reverse()
 
-                        path += res
-                        visited += res
+                    path += res
+                    visited += res
 
-                        score -= (len(visited) - 2)*10
+                    score -= (len(visited) - 2)*10
 
-                        break
+                    break
 
     print(f"Score: {score}")
     print(f"Explored path: {visited}")
