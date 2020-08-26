@@ -101,9 +101,8 @@ def addClauseToKB(KB, query, allAdj):
             KB.append([query + position_xy])
     return KB
 
-def findPossibleMove(KB, allAdj, visited):
+def findPossibleMove(KB, allAdj):
     possible_move = []
-    previous_move = []
     for i in range(len(allAdj)):
         position_xy = str(allAdj[i][0]) + str(allAdj[i][1])
         # KB ^ -alpha
@@ -113,12 +112,8 @@ def findPossibleMove(KB, allAdj, visited):
         if ((checkP == True) and (checkW == True)):
             possible_move.append([allAdj[i][0], allAdj[i][1]])
 
-    for possible in possible_move.copy():
-        if possible in visited:
-            previous_move.append(possible)
-            possible_move.remove(possible)
 
-    return possible_move, previous_move
+    return possible_move
 
 def findImpossibleMove(KB, allAdj):
     impossible_move = []
@@ -136,8 +131,11 @@ def findImpossibleMove(KB, allAdj):
 
         if checkW == True:
             if ['W' + position_xy] not in KB:
+                # Kill
+                # TODO
                 KB.append(['W' + position_xy])
                 KB.append(['-P' + position_xy])
+
 
 
         if ((checkP == True) or (checkW == True)):
@@ -145,11 +143,45 @@ def findImpossibleMove(KB, allAdj):
 
     return impossible_move, KB
 
-def findRandomMove(KB, allAdj, impossible_move, previous_move):
+def findRandomMove(KB, allAdj, impossible_move):
     while True:
         i = random.randint(0, len(allAdj) - 1)
-        if (allAdj[i] not in impossible_move) and (allAdj[i] not in previous_move):
+        if (allAdj[i] not in impossible_move):
             return allAdj[i]
+
+def updateKB(KB, cur_states, allAdj):
+    isGold = False
+    state = [s for s in cur_states]
+    for j in range(len(state)):
+
+        # Breeze
+        if state[j] == 'B':
+            clause = createClause('P', allAdj)
+            if clause not in KB:
+                KB.append(clause)
+
+            if 'S' not in state:
+                KB = addClauseToKB(KB, '-W', allAdj)
+
+
+        # Stench
+        elif state[j] == 'S':
+            clause = createClause('W', allAdj)
+            if clause not in KB:
+                KB.append(clause)
+
+            if 'B' not in state:
+                KB = addClauseToKB(KB, '-P', allAdj)
+
+        # Gold
+        elif state[j] == 'G':
+            isGold = True
+
+        # Empty
+        elif state[j] == '-':
+            KB = addClauseToKB(KB, '-P', allAdj)
+            KB = addClauseToKB(KB, '-W', allAdj)
+    return KB, isGold
 
 if __name__ == '__main__':
     # maze = input.inputFile("map1.txt", "r")
@@ -178,6 +210,8 @@ if __name__ == '__main__':
     visited = []
     path = []
     count_possible_move = 0
+    previous_move = []
+    isFirstMove = True
 
     while True:
         cur_states = maze[i_agent][j_agent]
@@ -193,76 +227,72 @@ if __name__ == '__main__':
             print("LOSE")
             print(f"Score: {score}")
             break
+
         else:
             allAdj = getAllAdj(maze, i_agent, j_agent)
             KB.append(['-P' + str(i_agent) + str(j_agent)])
             KB.append(['-W' + str(i_agent) + str(j_agent)])
-            state = [s for s in cur_states]
-            for j in range(len(state)):
+            KB, isGold = updateKB(KB, cur_states, allAdj)
 
-                # Breeze
-                if state[j] == 'B':
-                    clause = createClause('P', allAdj)
-                    if clause not in KB:
-                        KB.append(clause)
+            if isGold and gold_collect != countG:
+                score += 100
+                gold_collect += 1
+                if gold_collect == countG and countW == 0:
+                    break
 
-                    if 'S' not in state:
-                        KB = addClauseToKB(KB, '-W', allAdj)
-
-
-                # Stench
-                elif state[j] == 'S':
-                    clause = createClause('W', allAdj)
-                    if clause not in KB:
-                        KB.append(clause)
-
-                    if 'B' not in state:
-                        KB = addClauseToKB(KB, '-P', allAdj)
-
-                # Gold
-                elif state[j] == 'G':
-                    score += 100
-                    gold_collect += 1
-                    if(gold_collect == countG):
-                        print("WIN")
-                        print(visited)
-                        print(path)
-                        break
-
-                # Empty
-                elif state[j] == '-':
-                    KB = addClauseToKB(KB, '-P', allAdj)
-                    KB = addClauseToKB(KB, '-W', allAdj)
 
             # Find possible move
-            possible_move, previous_move = findPossibleMove(KB, allAdj, visited)
+            possible_move = findPossibleMove(KB, allAdj)
+
+            for possible in possible_move.copy():
+                if possible in visited:
+                    possible_move.remove(possible)
+
             count_possible_move += len(possible_move)
 
 
             if len(possible_move) > 0:
                 for i in range(len(possible_move)):
-                    if (not_in(possible_move[i], visited) == True):
-                        i_agent, j_agent = possible_move[i]
-                        count_possible_move -= 1
-                        score -= 10
-                        break
+                    previous_move.append(list((i_agent, j_agent)))
+                    i_agent, j_agent = possible_move[i]
+                    count_possible_move -= 1
+                    break
 
             else:
-                # Random move or go back
+                # Climb out of cave or go back
 
                 # Find impossible move, update KB
                 impossible_move, KB = findImpossibleMove(KB, allAdj)
 
                 # Go back
                 if count_possible_move > 0:
-                    i_agent, j_agent = previous_move[0]
-                    score -= 10
+                    i_agent, j_agent = previous_move[-1]
+                    previous_move.pop(-1)
                     count_possible_move -= 1
 
-                # Random move
+                # Climb out of cave
                 else:
-                    i_agent, j_agent = findRandomMove(KB, allAdj, impossible_move, previous_move)
-                    score -= 10
+                    if isFirstMove:
+                        i = random.randint(0, len(allAdj) - 1)
+                        i_agent, j_agent = allAdj[i]
+                        isFirstMove = False
+                    else:
+                        res = path.copy()
+
+                        res.pop(-1)
+                        res.reverse()
+
+                        path += res
+                        visited += res
+
+                        score -= (len(visited) - 2)*10
+
+                        break
+
+    print(f"Score: {score}")
+    print(f"Explored path: {visited}")
+    print(f"Path: {path}")
+
 
 
 
