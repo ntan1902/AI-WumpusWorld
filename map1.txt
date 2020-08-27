@@ -1,5 +1,5 @@
 4
--.B.P.B
-S.-.B.-
-W.BSG.P.B
 S.-.B.P
+W.BSG.P.B
+S.-.B.-
+-.B.P.B

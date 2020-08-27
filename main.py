@@ -37,7 +37,7 @@ def Resolution(KB, alpha):
 
         if len(new) == 0:
             return False
-        
+
         clauses = clauses + new
         new.clear()
 
@@ -64,25 +64,6 @@ def isComplementaryClause(resolvents):
         if (pair_clauses[0] == ('-' + pair_clauses[1])) or ('-' + pair_clauses[0] == pair_clauses[1]):
             return True
     return False
-
-def checkSubset(a, b):
-    count = 0
-    for a_ in a:
-        for b_ in b:
-            if a_ == b_:
-                count += 1
-                break
-
-    if count == len(a):
-        return True
-    else:
-        return False
-
-def not_in(a, b):
-    for i in range (len(b)):
-        if(a == b[i]):
-            return False
-    return True
 
 def createClause(query, allAdj):
     clause = []
@@ -118,7 +99,8 @@ def findPossibleMove(KB, allAdj, W_killed, countW):
 
     return possible_move
 
-def findImpossibleMove(KB, allAdj, maze, W_killed):
+def findImpossibleMove(KB, allAdj, maze):
+    kill = 0
     for i in range(len(allAdj)):
         position_xy = str(allAdj[i][0]) + str(allAdj[i][1])
         # KB ^ -alpha
@@ -136,39 +118,31 @@ def findImpossibleMove(KB, allAdj, maze, W_killed):
                 KB.append(['-P' + position_xy])
 
             # Kill
-            # TODO
             maze[allAdj[i][0]][allAdj[i][1]] = '-'
             W_adj = getAllAdj(maze, allAdj[i][0], allAdj[i][1])
 
             #delete all S near the Wumbus
-            for i in range(len(W_adj)):
-                if (maze[W_adj[i][0]][W_adj[i][1]] == 'S'):
-                    maze[W_adj[i][0]][W_adj[i][1]] = '-'
-                elif (maze[W_adj[i][0]][W_adj[i][1]].__contains__('S')):
-                    maze[W_adj[i][0]][W_adj[i][1]] = maze[W_adj[i][0]][W_adj[i][1]].replace('S', '')
+            for j in range(len(W_adj)):
+                if (maze[W_adj[j][0]][W_adj[j][1]] == 'S'):
+                    maze[W_adj[j][0]][W_adj[j][1]] = '-'
+                elif (maze[W_adj[j][0]][W_adj[j][1]].__contains__('S')):
+                    maze[W_adj[j][0]][W_adj[j][1]] = maze[W_adj[j][0]][W_adj[j][1]].replace('S', '')
 
             #delete all Wij in KB
             del_clauses = []
-            for i in range(len(W_adj)):
-                del_clauses.append('W' + str(W_adj[i][0]) + str(W_adj[i][1]))
-            for i in range(len(KB)):
-                for j in range(len(del_clauses)):
-                    if (KB[i].__contains__(del_clauses[j])):
-                        KB[i].remove(del_clauses[j])
-            W_killed += 1
-            print("Kill Wumpus at " + position_xy)
+            for j in range(len(W_adj)):
+                del_clauses.append('W' + str(W_adj[j][0]) + str(W_adj[j][1]))
+            for j in range(len(KB)):
+                for k in range(len(del_clauses)):
+                    if (KB[j].__contains__(del_clauses[k])):
+                        KB[j].remove(del_clauses[k])
+            kill += 1
+            print(f"Kill Wumpus at {allAdj[i][0] + 1, allAdj[i][1] + 1}")
 
 
 
 
-    return KB, maze, W_killed
-
-
-def findRandomMove(KB, allAdj, impossible_move):
-    while True:
-        i = random.randint(0, len(allAdj) - 1)
-        if (allAdj[i] not in impossible_move):
-            return allAdj[i]
+    return KB, maze, kill
 
 
 def updateKB(KB, cur_states, allAdj):
@@ -209,23 +183,23 @@ def updateKB(KB, cur_states, allAdj):
     return KB, isGold
 
 if __name__ == '__main__':
-    # maze = input.inputFile("map1.txt", "r")
-    maze = input.inputFile("maptab.txt", "r")
+    maze = input.inputFile("map2.txt", "r")
+    # maze = input.inputFile("maptab4.txt", "r")
     # Count the number of gold and wumpus
     countG = 0
     countW = 0
     for i in range(len(maze)):
         for j in range(len(maze)):
-            if ("G" in maze[i][j]):
+            if ('G' in maze[i][j]):
                 countG += 1
-            if ("W" in maze[i][j]):
+            if ('W' in maze[i][j]):
                 countW += 1
     i_agent = 0
     j_agent = 0
-    while True:
-        i_agent, j_agent = random.randint(0, len(maze) - 1), random.randint(0, len(maze) - 1)
-        if maze[i_agent][j_agent] != 'P' and maze[i_agent][j_agent] != 'W':
-            break
+    # while True:
+    #     i_agent, j_agent = random.randint(0, len(maze) - 1), random.randint(0, len(maze) - 1)
+    #     if maze[i_agent][j_agent] != 'P' and maze[i_agent][j_agent] != 'W':
+    #         break
     print(f"Start position for Agent: {i_agent + 1, j_agent + 1}")
     print(f"Room: {maze[i_agent][j_agent]}")
 
@@ -259,15 +233,27 @@ if __name__ == '__main__':
             KB.append(['-W' + str(i_agent) + str(j_agent)])
             KB, isGold = updateKB(KB, cur_states, allAdj)
 
-            if isGold and gold_collect != countG:
+            if isGold:
+                if len(cur_states) > 1:
+                    maze[i_agent][j_agent] = maze[i_agent][j_agent].replace('G', '')
+
+                else:
+                    maze[i_agent][j_agent] = maze[i_agent][j_agent].replace('G', '-')
+
+
                 score += 100
                 gold_collect += 1
-                if gold_collect == countG and countW == 0:
+                print(f"Grab gold at: {i_agent + 1, j_agent + 1}")
+                if gold_collect == countG and countW == W_killed:
+                    print("Killed all Wumpus and Got all Gold")
+                    score -= (len(visited) - 1) * 10
                     break
 
 
             # Find possible move
             possible = findPossibleMove(KB, allAdj, W_killed, countW)
+
+
             newMove = False
             for i in range(len(possible)):
                 if possible[i] not in visited:
@@ -285,11 +271,14 @@ if __name__ == '__main__':
                     possible_move.pop(-1)
                 else:
                     # Find impossible move, update KB
-                    KB, maze, W_killed = findImpossibleMove(KB, allAdj, maze, W_killed)
-                    if(W_killed == countW and gold_collect == countG):
+                    KB, maze, kill = findImpossibleMove(KB, allAdj, maze)
+                    if kill > 0:
+                        score -= 100
+                        W_killed += kill
+                    if (W_killed == countW and gold_collect == countG):
                         print("Killed all Wumpus and Got all Gold")
+                        score -= (len(visited) - 1) * 10
                         break
-                        #TODO
                     # Go back
                     i_agent, j_agent = previous_move[-1]
                     previous_move.pop(-1)
@@ -311,7 +300,7 @@ if __name__ == '__main__':
                     res.reverse()
 
                     path += res
-                    visited += res
+                    visited += res.copy()
 
                     score -= (len(visited) - 2)*10
 
@@ -321,11 +310,8 @@ if __name__ == '__main__':
     for i in range(len(visited)):
         visited[i][0] += 1
         visited[i][1] += 1
-    for i in range(len(path)):
-        path[i][0] += 1
-        path[i][1] += 1
     print(f"Explored path: {visited}")
-    print(f"Path: {path}")
+    
 
 
 
