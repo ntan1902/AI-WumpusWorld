@@ -183,7 +183,7 @@ def updateKB(KB, cur_states, allAdj):
     return KB, isGold
 
 if __name__ == '__main__':
-    maze = input.inputFile("map2.txt", "r")
+    maze = input.inputFile("map3.txt", "r")
     # maze = input.inputFile("maptab4.txt", "r")
     # Count the number of gold and wumpus
     countG = 0
@@ -194,123 +194,140 @@ if __name__ == '__main__':
                 countG += 1
             if ('W' in maze[i][j]):
                 countW += 1
-    i_agent = 0
-    j_agent = 0
+    i_agent = 8
+    j_agent = 2
     # while True:
     #     i_agent, j_agent = random.randint(0, len(maze) - 1), random.randint(0, len(maze) - 1)
     #     if maze[i_agent][j_agent] != 'P' and maze[i_agent][j_agent] != 'W':
     #         break
-    print(f"Start position for Agent: {i_agent + 1, j_agent + 1}")
-    print(f"Room: {maze[i_agent][j_agent]}")
 
-    KB = []
-    score = 0
-    gold_collect = 0
-    W_killed = 0
-    visited = []
-    path = []
-    possible_move = []
-    previous_move = []
-    isFirstMove = True
+    with open("output.txt", 'wt') as fo:
+        fo.write(f"Start position for Agent: {i_agent + 1, j_agent + 1}\n")
+        fo.write(f"Room: {maze[i_agent][j_agent]}\n")
+        print(f"Start position for Agent: {i_agent + 1, j_agent + 1}")
+        print(f"Room: {maze[i_agent][j_agent]}")
 
-    while True:
-        cur_states = maze[i_agent][j_agent]
-        visited.append([i_agent, j_agent])
+        KB = []
+        score = 0
+        gold_collect = 0
+        W_killed = 0
+        visited = []
+        path = []
+        possible_move = []
+        previous_move = []
+        isFirstMove = True
 
-        if [i_agent, j_agent] in path:
-            path.pop(-1)
-        else:
-            path.append([i_agent, j_agent])
+        while True:
+            if i_agent == 5 and j_agent == 4:
+                print()
+            cur_states = maze[i_agent][j_agent]
+            visited.append([i_agent, j_agent])
 
-        if cur_states == 'P' or cur_states == 'W':
-            score -= 10000
-            print("LOSE")
-            break
+            if [i_agent, j_agent] in path:
+                path.pop(-1)
+            else:
+                path.append([i_agent, j_agent])
 
-        else:
-            allAdj = getAllAdj(maze, i_agent, j_agent)
-            KB.append(['-P' + str(i_agent) + str(j_agent)])
-            KB.append(['-W' + str(i_agent) + str(j_agent)])
-            KB, isGold = updateKB(KB, cur_states, allAdj)
-
-            if isGold:
-                if len(cur_states) > 1:
-                    maze[i_agent][j_agent] = maze[i_agent][j_agent].replace('G', '')
-
-                else:
-                    maze[i_agent][j_agent] = maze[i_agent][j_agent].replace('G', '-')
-
-
-                score += 100
-                gold_collect += 1
-                print(f"Grab gold at: {i_agent + 1, j_agent + 1}")
-                if gold_collect == countG and countW == W_killed:
-                    print("Killed all Wumpus and Got all Gold")
-                    score -= (len(visited) - 1) * 10
-                    break
-
-
-            # Find possible move
-            possible = findPossibleMove(KB, allAdj, W_killed, countW)
-
-
-            newMove = False
-            for i in range(len(possible)):
-                if possible[i] not in visited:
-                    if possible[i] in possible_move:
-                        possible_move.remove(possible[i])
-                    possible_move.append(possible[i])
-                    newMove = True
-
-
-            if len(possible_move) > 0:
-                isFirstMove = False
-                if newMove:
-                    previous_move.append(list((i_agent, j_agent)))
-                    i_agent, j_agent = possible_move[-1]
-                    possible_move.pop(-1)
-                else:
-                    # Find impossible move, update KB
-                    KB, maze, kill = findImpossibleMove(KB, allAdj, maze)
-                    if kill > 0:
-                        score -= 100
-                        W_killed += kill
-                    if (W_killed == countW and gold_collect == countG):
-                        print("Killed all Wumpus and Got all Gold")
-                        score -= (len(visited) - 1) * 10
-                        break
-                    # Go back
-                    i_agent, j_agent = previous_move[-1]
-                    previous_move.pop(-1)
-
-
+            if cur_states == 'P' or cur_states == 'W':
+                score -= 10000
+                print("LOSE")
+                fo.write("LOSE\n")
+                break
 
             else:
+                allAdj = getAllAdj(maze, i_agent, j_agent)
+                if ['-P' + str(i_agent) + str(j_agent)] not in KB:
+                    KB.append(['-P' + str(i_agent) + str(j_agent)])
 
-                # Random for first move
-                if isFirstMove:
-                    i = random.randint(0, len(allAdj) - 1)
-                    i_agent, j_agent = allAdj[i]
+                if ['-W' + str(i_agent) + str(j_agent)] not in KB:
+                    KB.append(['-W' + str(i_agent) + str(j_agent)])
+
+                KB, isGold = updateKB(KB, cur_states, allAdj)
+
+                if isGold:
+                    if len(cur_states) > 1:
+                        maze[i_agent][j_agent] = maze[i_agent][j_agent].replace('G', '')
+
+                    else:
+                        maze[i_agent][j_agent] = maze[i_agent][j_agent].replace('G', '-')
+
+
+                    score += 100
+                    gold_collect += 1
+                    print(f"Grab gold at: {i_agent + 1, j_agent + 1}")
+                    fo.write(f"Grab gold at: {i_agent + 1, j_agent + 1}\n")
+
+                    if gold_collect == countG and countW == W_killed:
+                        print("Killed all Wumpus and Got all Gold")
+                        fo.write("Killed all Wumpus and Got all Gold\n")
+                        score -= (len(visited) - 1) * 10
+                        break
+
+
+                # Find possible move
+                possible = findPossibleMove(KB, allAdj, W_killed, countW)
+
+
+                newMove = False
+                for i in range(len(possible)):
+                    if possible[i] not in visited:
+                        if possible[i] in possible_move:
+                            possible_move.remove(possible[i])
+                        possible_move.append(possible[i])
+                        newMove = True
+
+
+                if len(possible_move) > 0:
                     isFirstMove = False
-                # Climb out of cave
+                    if newMove:
+                        previous_move.append(list((i_agent, j_agent)))
+                        i_agent, j_agent = possible_move[-1]
+                        possible_move.pop(-1)
+                    else:
+                        # Find impossible move, update KB
+                        KB, maze, kill = findImpossibleMove(KB, allAdj, maze)
+                        if kill > 0:
+                            score -= 100
+                            W_killed += kill
+                        if (W_killed == countW and gold_collect == countG):
+                            print("Killed all Wumpus and Got all Gold")
+                            fo.write("Killed all Wumpus and Got all Gold\n")
+                            score -= (len(visited) - 1) * 10
+                            break
+                        # Go back
+                        i_agent, j_agent = previous_move[-1]
+                        previous_move.pop(-1)
+
+
+
                 else:
-                    res = path.copy()
 
-                    res.pop(-1)
-                    res.reverse()
+                    # Random for first move
+                    if isFirstMove:
+                        i = random.randint(0, len(allAdj) - 1)
+                        i_agent, j_agent = allAdj[i]
+                        isFirstMove = False
+                    # Climb out of cave
+                    else:
+                        res = path.copy()
 
-                    path += res
-                    visited += res.copy()
+                        res.pop(-1)
+                        res.reverse()
 
-                    score -= (len(visited) - 2)*10
+                        path += res
+                        visited += res.copy()
 
-                    break
+                        score -= (len(visited) - 2)*10
 
-    print(f"Score: {score}")
-    for i in range(len(visited)):
-        visited[i][0] += 1
-        visited[i][1] += 1
-    print(f"Explored path: {visited}")
+                        break
+
+        for i in range(len(visited)):
+            visited[i][0] += 1
+            visited[i][1] += 1
+        print(f"Score: {score}")
+        print(f"Explored path: {visited}")
+        fo.write(f"Score: {score}\n")
+        fo.write(f"Explored path: {visited}\n")
     
 
 
