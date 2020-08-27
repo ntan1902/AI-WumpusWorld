@@ -31,13 +31,13 @@ def Resolution(KB, alpha):
                 resolvents = Resolve(pair_clauses)
                 if len(resolvents) == 0:
                     return True
-                resolvents = sorted(resolvents, key=lambda x:x[-1])
+                #resolvents = sorted(resolvents, key=lambda x:x[-1])
                 if not(isComplementaryClause(resolvents)) and(resolvents not in clauses) and(resolvents not in new):
                     new.append(resolvents)
 
         if len(new) == 0:
             return False
-
+        
         clauses = clauses + new
         new.clear()
 
@@ -60,10 +60,9 @@ def Resolve(pair_clauses):
     return list(clauses_1 + clauses_2)
 
 def isComplementaryClause(resolvents):
-    for i in range(len(resolvents)):
-        for j in range(len(resolvents)):
-            if (resolvents[i] == ('-' + resolvents[j])) or ('-' + resolvents[i] == resolvents[j]):
-                return True
+    for pair_clauses in itertools.combinations(resolvents, 2):
+        if (pair_clauses[0] == ('-' + pair_clauses[1])) or ('-' + pair_clauses[0] == pair_clauses[1]):
+            return True
     return False
 
 def checkSubset(a, b):
