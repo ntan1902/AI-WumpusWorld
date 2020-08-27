@@ -210,7 +210,7 @@ def updateKB(KB, cur_states, allAdj):
 
 if __name__ == '__main__':
     # maze = input.inputFile("map1.txt", "r")
-    maze = input.inputFile("maptab10.txt", "r")
+    maze = input.inputFile("maptab.txt", "r")
     # Count the number of gold and wumpus
     countG = 0
     countW = 0
@@ -222,10 +222,10 @@ if __name__ == '__main__':
                 countW += 1
     i_agent = 0
     j_agent = 0
-    # while True:
-    #     i_agent, j_agent = random.randint(0, len(maze) - 1), random.randint(0, len(maze) - 1)
-    #     if maze[i_agent][j_agent] != 'P' and maze[i_agent][j_agent] != 'W':
-    #         break
+    while True:
+        i_agent, j_agent = random.randint(0, len(maze) - 1), random.randint(0, len(maze) - 1)
+        if maze[i_agent][j_agent] != 'P' and maze[i_agent][j_agent] != 'W':
+            break
     print(f"Start position for Agent: {i_agent + 1, j_agent + 1}")
     print(f"Room: {maze[i_agent][j_agent]}")
 
@@ -318,6 +318,12 @@ if __name__ == '__main__':
                     break
 
     print(f"Score: {score}")
+    for i in range(len(visited)):
+        visited[i][0] += 1
+        visited[i][1] += 1
+    for i in range(len(path)):
+        path[i][0] += 1
+        path[i][1] += 1
     print(f"Explored path: {visited}")
     print(f"Path: {path}")
 
