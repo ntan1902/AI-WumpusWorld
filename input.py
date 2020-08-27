@@ -10,9 +10,11 @@ def inputFile(filename, mode):
                 maze.append(list(map(str, d[i].split('\t'))))
 
 
+
     except IOError as err:
         print(err)
-
+    maze.reverse()
+    maze = list(map(list, zip(*maze)))
     return maze
 
 
