@@ -115,7 +115,7 @@ def findPossibleMove(KB, allAdj):
 
     return possible_move
 
-def findImpossibleMove(KB, allAdj):
+def findImpossibleMove(KB, allAdj, maze, W_killed):
     for i in range(len(allAdj)):
         position_xy = str(allAdj[i][0]) + str(allAdj[i][1])
         # KB ^ -alpha
@@ -130,18 +130,42 @@ def findImpossibleMove(KB, allAdj):
 
         if checkW == True:
             if ['W' + position_xy] not in KB:
-                # Kill
-                # TODO
                 KB.append(['W' + position_xy])
                 KB.append(['-P' + position_xy])
+            #else:
+                # Kill
+                # TODO
+                W_adj = getAllAdj(maze, allAdj[i][0], allAdj[i][1])
+                #delete all S near the Wumbus
+                for i in range(len(W_adj)):
+                    if (maze[W_adj[i][0]][W_adj[i][1]] == 'S'):
+                        maze[W_adj[i][0]][W_adj[i][1]] = '-'
+                    elif (maze[W_adj[i][0]][W_adj[i][1]].__contains__('S')):
+                        maze[W_adj[i][0]][W_adj[i][1]] = maze[W_adj[i][0]][W_adj[i][1]].replace('S', '')
+                #delete all Sij in KB
+                del_clauses = []
+                for i in range(len(W_adj)):
+                    del_clauses.append('W' + str(W_adj[i][0]) + str(W_adj[i][1]))
 
-    return KB
+                for i in range(len(KB)):
+                    for j in range(len(del_clauses)):
+                        if (KB[i].__contains__(del_clauses[j])):
+                            KB[i].remove(del_clauses[j])
+                W_killed += 1
+                print("Kill Wumpus at " + position_xy)
+
+
+
+
+    return KB, maze, W_killed
+
 
 def findRandomMove(KB, allAdj, impossible_move):
     while True:
         i = random.randint(0, len(allAdj) - 1)
         if (allAdj[i] not in impossible_move):
             return allAdj[i]
+
 
 def updateKB(KB, cur_states, allAdj):
     isGold = False
@@ -170,6 +194,9 @@ def updateKB(KB, cur_states, allAdj):
         # Gold
         elif state[j] == 'G':
             isGold = True
+            if (len(state) == 1):
+                KB = addClauseToKB(KB, '-P', allAdj)
+                KB = addClauseToKB(KB, '-W', allAdj)
 
         # Empty
         elif state[j] == '-':
@@ -179,7 +206,7 @@ def updateKB(KB, cur_states, allAdj):
 
 if __name__ == '__main__':
     # maze = input.inputFile("map1.txt", "r")
-    maze = input.inputFile("maptab10.txt", "r")
+    maze = input.inputFile("maptab.txt", "r")
     # Count the number of gold and wumpus
     countG = 0
     countW = 0
@@ -201,6 +228,7 @@ if __name__ == '__main__':
     KB = []
     score = 0
     gold_collect = 0
+    W_killed = 0
     visited = []
     path = []
     possible_move = []
@@ -258,7 +286,10 @@ if __name__ == '__main__':
                     possible_move.pop(-1)
                 else:
                     # Find impossible move, update KB
-                    KB = findImpossibleMove(KB, allAdj)
+                    KB, maze, W_killed = findImpossibleMove(KB, allAdj, maze, W_killed)
+                    if(W_killed == countW and gold_collect == countG):
+                        print("Killed all Wumpus and Got all Gold")
+                        #TODO
                     # Go back
                     i_agent, j_agent = previous_move[-1]
                     previous_move.pop(-1)
