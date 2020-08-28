@@ -6,8 +6,8 @@ def inputFile(filename, mode):
             size = int(f.readline())
             d = f.read().splitlines()
             for i in range(len(d)):
-                # maze.append(list(map(str, d[i].split('.'))))
-                maze.append(list(map(str, d[i].split('\t'))))
+                maze.append(list(map(str, d[i].split('.'))))
+                #maze.append(list(map(str, d[i].split('\t'))))
 
 
 
