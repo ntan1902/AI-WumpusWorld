@@ -146,9 +146,8 @@ def findImpossibleMove(KB, allAdj, maze, W_killed, countW):
                 if(KB.__contains__(cl)):
                     KB.remove(cl)
             kill += 1
-            print(f"Kill Wumpus at {allAdj[i][0] + 1, allAdj[i][1] + 1}")
-
-
+            print(f"Kill Wumpus at {allAdj[i][0] + 1, allAdj[i][1] + 1} - 100 point")
+            fo.write(f"Kill Wumpus at: {i_agent + 1, j_agent + 1} - 100 point\n")
 
 
     return KB, maze, kill
@@ -194,7 +193,7 @@ def updateKB(KB, cur_states, allAdj, W_killed, countW):
     return KB, isGold
 
 if __name__ == '__main__':
-    maze = input.inputFile("map10.3.txt", "r")
+    maze = input.inputFile("map4x4.txt", "r")
     # maze = input.inputFile("maptab4.txt", "r")
     # Count the number of gold and wumpus
     countG = 0
@@ -206,11 +205,11 @@ if __name__ == '__main__':
             if ('W' in maze[i][j]):
                 countW += 1
     i_agent = 0
-    j_agent = 1
-    while True:
-        i_agent, j_agent = random.randint(0, len(maze) - 1), random.randint(0, len(maze) - 1)
-        if maze[i_agent][j_agent] != 'P' and maze[i_agent][j_agent] != 'W':
-            break
+    j_agent = 0
+    # while True:
+    #     i_agent, j_agent = random.randint(0, len(maze) - 1), random.randint(0, len(maze) - 1)
+    #     if maze[i_agent][j_agent] != 'P' and maze[i_agent][j_agent] != 'W':
+    #         break
 
     with open("output.txt", 'wt') as fo:
         fo.write(f"Start position for Agent: {i_agent + 1, j_agent + 1}\n")
@@ -264,8 +263,8 @@ if __name__ == '__main__':
 
                     score += 100
                     gold_collect += 1
-                    print(f"Grab gold at: {i_agent + 1, j_agent + 1}")
-                    fo.write(f"Grab gold at: {i_agent + 1, j_agent + 1}\n")
+                    print(f"Grab gold at: {i_agent + 1, j_agent + 1} + 100 point")
+                    fo.write(f"Grab gold at: {i_agent + 1, j_agent + 1} + 100 point\n")
 
                     if gold_collect == countG and countW == W_killed:
                         print("Killed all Wumpus and Got all Gold")
@@ -327,14 +326,28 @@ if __name__ == '__main__':
                         isFirstMove = False
                     # Climb out of cave
                     else:
-                        res = path.copy()
+                        print(f"Climb out of the cave ")
+                        fo.write(f"Climb out of the cave ")
 
-                        res.pop(-1)
-                        res.reverse()
-
-                        visited += res.copy()
-
-                        score -= (len(visited) - 2)*10
+                        # Go back
+                        path.reverse()
+                        goal = []
+                        findGoal = False
+                        for i in range(len(path)):
+                            adjPath = getAllAdj(maze, path[i][0], path[i][1])
+                            for j in range(len(adjPath)):
+                                if adjPath[j] == visited[0]:
+                                    goal.append(path[i].copy())
+                                    goal.append(visited[0].copy())
+                                    findGoal = True
+                                    break
+                            if findGoal:
+                                break
+                            else:
+                                goal.append(path[i])
+                        goal.pop(0)
+                        visited += goal
+                        score -= (len(visited) - 2) * 10
 
                         break
 
