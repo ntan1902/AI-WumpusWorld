@@ -194,7 +194,7 @@ def updateKB(KB, cur_states, allAdj, W_killed, countW):
     return KB, isGold
 
 if __name__ == '__main__':
-    maze = input.inputFile("map10.1.txt", "r")
+    maze = input.inputFile("map10.3.txt", "r")
     # maze = input.inputFile("maptab4.txt", "r")
     # Count the number of gold and wumpus
     countG = 0
@@ -207,10 +207,10 @@ if __name__ == '__main__':
                 countW += 1
     i_agent = 0
     j_agent = 1
-    # while True:
-    #     i_agent, j_agent = random.randint(0, len(maze) - 1), random.randint(0, len(maze) - 1)
-    #     if maze[i_agent][j_agent] != 'P' and maze[i_agent][j_agent] != 'W':
-    #         break
+    while True:
+        i_agent, j_agent = random.randint(0, len(maze) - 1), random.randint(0, len(maze) - 1)
+        if maze[i_agent][j_agent] != 'P' and maze[i_agent][j_agent] != 'W':
+            break
 
     with open("output.txt", 'wt') as fo:
         fo.write(f"Start position for Agent: {i_agent + 1, j_agent + 1}\n")
@@ -229,6 +229,7 @@ if __name__ == '__main__':
         isFirstMove = True
 
         while True:
+            print(f"Move to {(i_agent + 1, j_agent + 1)}")
             cur_states = maze[i_agent][j_agent]
             visited.append([i_agent, j_agent])
 
