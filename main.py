@@ -99,7 +99,7 @@ def findPossibleMove(KB, allAdj, W_killed, countW):
 
     return possible_move
 
-def findImpossibleMove(KB, allAdj, maze):
+def findImpossibleMove(KB, allAdj, maze, W_killed, countW):
     kill = 0
     for i in range(len(allAdj)):
         position_xy = str(allAdj[i][0]) + str(allAdj[i][1])
@@ -154,7 +154,7 @@ def findImpossibleMove(KB, allAdj, maze):
     return KB, maze, kill
 
 
-def updateKB(KB, cur_states, allAdj):
+def updateKB(KB, cur_states, allAdj, W_killed, countW):
     isGold = False
     state = [s for s in cur_states]
     for j in range(len(state)):
@@ -165,7 +165,7 @@ def updateKB(KB, cur_states, allAdj):
             if clause not in KB:
                 KB.append(clause)
 
-            if 'S' not in state:
+            if 'S' not in state and W_killed != countW:
                 KB = addClauseToKB(KB, '-W', allAdj)
 
 
@@ -183,13 +183,14 @@ def updateKB(KB, cur_states, allAdj):
             isGold = True
             if (len(state) == 1):
                 KB = addClauseToKB(KB, '-P', allAdj)
-                KB = addClauseToKB(KB, '-W', allAdj)
+                if W_killed != countW:
+                    KB = addClauseToKB(KB, '-W', allAdj)
 
         # Empty
         elif state[j] == '-':
             KB = addClauseToKB(KB, '-P', allAdj)
-
-            KB = addClauseToKB(KB, '-W', allAdj)
+            if W_killed != countW:
+                KB = addClauseToKB(KB, '-W', allAdj)
     return KB, isGold
 
 if __name__ == '__main__':
@@ -247,10 +248,10 @@ if __name__ == '__main__':
                 if ['-P' + str(i_agent) + str(j_agent)] not in KB:
                     KB.append(['-P' + str(i_agent) + str(j_agent)])
 
-                if ['-W' + str(i_agent) + str(j_agent)] not in KB:
+                if ['-W' + str(i_agent) + str(j_agent)] not in KB and W_killed != countW:
                     KB.append(['-W' + str(i_agent) + str(j_agent)])
 
-                KB, isGold = updateKB(KB, cur_states, allAdj)
+                KB, isGold = updateKB(KB, cur_states, allAdj, W_killed, countW)
 
                 if isGold:
                     if len(cur_states) > 1:
@@ -274,15 +275,15 @@ if __name__ == '__main__':
 
                 # Find possible move
                 possible = findPossibleMove(KB, allAdj, W_killed, countW)
-                KB, maze, kill = findImpossibleMove(KB, allAdj, maze)
-                if kill > 0:
-                    score -= 100
-                    W_killed += kill
-                if (W_killed == countW and gold_collect == countG):
-                    print("Killed all Wumpus and Got all Gold")
-                    fo.write("Killed all Wumpus and Got all Gold\n")
-                    score -= (len(visited) - 1) * 10
-                    break
+                # KB, maze, kill = findImpossibleMove(KB, allAdj, maze)
+                # if kill > 0:
+                #     score -= 100
+                #     W_killed += kill
+                # if (W_killed == countW and gold_collect == countG):
+                #     print("Killed all Wumpus and Got all Gold")
+                #     fo.write("Killed all Wumpus and Got all Gold\n")
+                #     score -= (len(visited) - 1) * 10
+                #     break
 
                 newMove = False
                 for i in range(len(possible)):
@@ -301,15 +302,15 @@ if __name__ == '__main__':
                         possible_move.pop(-1)
                     else:
                         # Find impossible move, update KB
-                        # KB, maze, kill = findImpossibleMove(KB, allAdj, maze)
-                        # if kill > 0:
-                        #     score -= 100
-                        #     W_killed += kill
-                        # if (W_killed == countW and gold_collect == countG):
-                        #     print("Killed all Wumpus and Got all Gold")
-                        #     fo.write("Killed all Wumpus and Got all Gold\n")
-                        #     score -= (len(visited) - 1) * 10
-                        #     break
+                        KB, maze, kill = findImpossibleMove(KB, allAdj, maze, W_killed, countW)
+                        if kill > 0:
+                            score -= 100
+                            W_killed += kill
+                        if (W_killed == countW and gold_collect == countG):
+                            print("Killed all Wumpus and Got all Gold")
+                            fo.write("Killed all Wumpus and Got all Gold\n")
+                            score -= (len(visited) - 1) * 10
+                            break
                         # Go back
                         i_agent, j_agent = previous_move[-1]
                         previous_move.pop(-1)
@@ -330,7 +331,6 @@ if __name__ == '__main__':
                         res.pop(-1)
                         res.reverse()
 
-                        path += res
                         visited += res.copy()
 
                         score -= (len(visited) - 2)*10
